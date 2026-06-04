@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>장기재고 처리</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0f172a;
+  color: #f1f5f9;
+  font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', Arial, sans-serif;
+  min-height: 100dvh;
+}
+
+/* ── layout ── */
+.content { padding: 16px; }
+.bottom-pad { height: 80px; }
+
+/* ── app header (setup) ── */
+.app-header {
+  background: #1e293b;
+  padding: 16px;
+  border-bottom: 1px solid #334155;
+  position: sticky; top: 0; z-index: 10;
+}
+.app-header h1 { font-size: 18px; font-weight: 800; }
+.app-title-sub { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+
+/* ── page header (inner steps) ── */
+.page-header {
+  display: flex; align-items: center; gap: 10px;
+  background: #1e293b; padding: 12px 16px;
+  position: sticky; top: 0; z-index: 10;
+  border-bottom: 1px solid #334155;
+}
+.back-btn {
+  background: none; border: none; color: #60a5fa;
+  font-size: 14px; cursor: pointer; padding: 4px 0; white-space: nowrap;
+}
+.page-title { font-size: 15px; font-weight: 700; }
+
+/* ── scan header ── */
+.scan-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; background: #1e293b;
+  padding: 12px 16px; border-bottom: 1px solid #334155;
+  position: sticky; top: 0; z-index: 10;
+}
+.scan-input-wrap {
+  padding: 10px 16px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  position: sticky; top: 57px; z-index: 9;
+}
+.scan-input {
+  width: 100%; background: #0f172a; border: 1.5px solid #334155;
+  border-radius: 10px; padding: 11px 14px;
+  color: #f1f5f9; font-size: 15px; outline: none;
+}
+.scan-input:focus { border-color: #3b82f6; }
+
+/* ── form (setup) ── */
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
+.form-select, .form-input {
+  width: 100%; background: #1e293b; border: 1.5px solid #334155;
+  border-radius: 10px; padding: 11px 14px; color: #f1f5f9;
+  font-size: 15px; outline: none; appearance: none;
+}
+.form-select:focus, .form-input:focus { border-color: #3b82f6; }
+
+/* ── buttons ── */
+.btn {
+  border: none; border-radius: 10px; padding: 12px 16px;
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s;
+}
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-block { width: 100%; display: block; }
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #2563eb; }
+.btn-outline  { background: #1e293b; color: #94a3b8; border: 1.5px solid #334155; }
+.btn-price    { background: #f59e0b; color: #000; }
+.btn-price:hover:not(:disabled) { background: #d97706; }
+.btn-move     { background: #6366f1; color: #fff; }
+.btn-move:hover:not(:disabled) { background: #4f46e5; }
+.btn-green    { background: #22c55e; color: #000; font-weight: 800; }
+.btn-kiosk    { background: #0ea5e9; color: #fff; }
+
+/* ── badges ── */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 99px;
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.badge-red   { background: #7f1d1d; color: #fca5a5; }
+.badge-green { background: #14532d; color: #86efac; }
+.sold-tag { background: #374151; color: #9ca3af; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+
+/* ── scan cards ── */
+.scan-card {
+  background: #1e293b; border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 10px;
+  border: 1.5px solid #334155;
+}
+.scan-card.card-lt { border-color: #7f1d1d; background: #1a0f0f; }
+.scan-card.card-err { border-color: #374151; opacity: .8; }
+
+/* ── process cards ── */
+.proc-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: #1e293b; border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 8px;
+  border: 1.5px solid #334155; cursor: pointer;
+}
+.proc-card.card-lt { border-color: #7f1d1d; background: #1a0f0f; }
+.proc-card input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; accent-color: #f59e0b; }
+.proc-info { flex: 1; min-width: 0; }
+
+/* ── item cards (price edit) ── */
+.item-card {
+  background: #1e293b; border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 8px;
+  border: 1.5px solid #334155;
+}
+
+/* ── price inputs ── */
+.price-old { color: #94a3b8; font-size: 14px; min-width: 60px; }
+.price-input {
+  background: #0f172a; border: 1.5px solid #334155;
+  border-radius: 8px; padding: 7px 10px;
+  color: #f1f5f9; font-size: 15px; font-weight: 700;
+  width: 110px; text-align: right;
+}
+.price-input:focus { outline: none; border-color: #3b82f6; }
+.price-input.changed { border-color: #f59e0b; color: #fbbf24; }
+
+/* ── mode bar ── */
+.mode-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+.mode-btn {
+  flex: 1; background: #1e293b; border: 1.5px solid #334155;
+  border-radius: 8px; padding: 9px; color: #94a3b8;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.mode-btn.active { background: #f59e0b; border-color: #f59e0b; color: #000; }
+.bulk-box { display: none; background: #451a03; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.bulk-box.open { display: block; }
+.bulk-input {
+  background: #0f172a; border: 1.5px solid #92400e;
+  border-radius: 8px; padding: 7px 10px;
+  color: #fbbf24; font-size: 18px; font-weight: 700; width: 70px; text-align: center;
+}
+.bulk-input:focus { outline: none; border-color: #f59e0b; }
+
+/* ── action bar ── */
+.action-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #1e293b; border-top: 1px solid #334155;
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sel-count { font-size: 13px; color: #94a3b8; white-space: nowrap; }
+
+/* ── section headers ── */
+.section-hd {
+  font-size: 13px; font-weight: 700; padding: 6px 0;
+  margin-bottom: 8px; border-bottom: 1px solid #334155;
+}
+.red-hd   { color: #fca5a5; }
+.green-hd { color: #86efac; }
+
+/* ── slack notice ── */
+.slack-notice {
+  background: #1c1917; border: 1px solid #78350f;
+  border-radius: 10px; padding: 12px 14px;
+  font-size: 13px; color: #fbbf24; margin-bottom: 14px; line-height: 1.6;
+}
+
+/* ── success box ── */
+.success-box {
+  background: #0a2a18; border: 1px solid #22c55e;
+  border-radius: 12px; padding: 16px;
+}
+
+/* ── move list ── */
+.move-list {
+  background: #1e293b; border-radius: 12px;
+  border: 1.5px solid #334155; overflow: hidden;
+}
+.move-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid #334155;
+}
+.move-item:last-child { border-bottom: none; }
+
+/* ── modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.65); z-index: 9999;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: #1e293b; border-radius: 14px;
+  padding: 24px 20px; max-width: 340px; width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.modal-msg { color: #f1f5f9; font-size: 14px; line-height: 1.7; white-space: pre-line; }
+
+/* ── helpers ── */
+.bc-text  { font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; color: #f1f5f9; }
+.item-name{ font-size: 14px; font-weight: 600; color: #e2e8f0; margin: 4px 0 2px; }
+.meta     { font-size: 12px; color: #64748b; line-height: 1.5; }
+.muted    { color: #64748b; }
+.err-text { font-size: 12px; color: #f87171; margin-top: 4px; }
+.row-sb   { display: flex; justify-content: space-between; align-items: flex-start; }
+.row-gap  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.flex-1   { flex: 1; }
+.remove-btn {
+  background: none; border: none; color: #475569;
+  font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0;
+}
+.remove-btn:hover { color: #ef4444; }
+.empty-msg { text-align: center; color: #475569; padding: 40px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- STEP 1: 설정 -->
+<div id="step-setup">
+  <div class="app-header">
+    <h1>🔄 장기재고 처리</h1>
+    <div class="app-title-sub">바코드 스캔 → 가격수정 · 위치이동</div>
+  </div>
+  <div class="content" style="padding-top:24px">
+    <div class="form-group">
+      <label class="form-label">매장 선택</label>
+      <select id="store-select" class="form-select">
+        <option value="">로딩 중...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">장기재고 기준일</label>
+      <div class="row-gap">
+        <input type="number" id="threshold-input" class="form-input" value="60" min="1" max="365" style="width:90px">
+        <span style="color:#94a3b8">일 이상 경고</span>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" id="start-btn">스캔 시작 →</button>
+  </div>
+</div>
+
+<!-- STEP 2: 스캔 -->
+<div id="step-scan" style="display:none">
+  <div class="scan-header">
+    <div>
+      <div style="font-size:14px;font-weight:700" id="scan-store-label"></div>
+      <div style="font-size:12px;color:#94a3b8" id="scan-count">0개 스캔됨</div>
+    </div>
+    <button class="btn btn-primary" id="process-btn" disabled>처리하기 →</button>
+  </div>
+  <div class="scan-input-wrap">
+    <input type="text" id="scan-input" class="scan-input" placeholder="바코드 스캔 또는 직접 입력" autocomplete="off" autocorrect="off" autocapitalize="off">
+  </div>
+  <div id="scan-list" class="content"></div>
+  <div class="bottom-pad"></div>
+  <!-- back은 app.js에서 동적 연결 -->
+  <button id="scan-back-btn" style="display:none"></button>
+</div>
+
+<!-- STEP 3: 처리 선택 -->
+<div id="step-process" style="display:none" class="content" style="padding-bottom:80px"></div>
+
+<!-- STEP 4A: 가격수정 -->
+<div id="step-price" style="display:none" class="content"></div>
+
+<!-- STEP 4B: 이동복사 -->
+<div id="step-move" style="display:none" class="content"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

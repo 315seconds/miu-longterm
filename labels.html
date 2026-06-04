@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>라벨 출력</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="js/BrowserPrint.min.js" onerror="console.warn('BrowserPrint SDK 없음')"></script>
+<script src="js/BrowserPrint-Zebra.min.js" onerror="console.warn('BrowserPrint-Zebra SDK 없음')"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+function escapeHtml(s) {
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function appAlert(msg) {
+  return new Promise(resolve => {
+    const o = document.createElement('div');
+    o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+    o.innerHTML = `<div style="background:#1e293b;border-radius:14px;padding:24px 20px;max-width:320px;width:100%"><div style="color:#f1f5f9;font-size:15px;line-height:1.6;white-space:pre-line;margin-bottom:20px">${escapeHtml(msg)}</div><button id="_ok" style="width:100%;padding:11px;background:#3b82f6;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">확인</button></div>`;
+    document.body.appendChild(o);
+    const close = () => { o.remove(); resolve(); };
+    o.querySelector('#_ok').onclick = close;
+    o.onclick = e => { if (e.target===o) close(); };
+  });
+}
+</script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f1f5f9; font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', Arial, sans-serif; }
+.screen-header {
+  background: #1e293b; color: #e2e8f0; padding: 10px 16px;
+  display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 10;
+}
+.screen-header h1 { font-size: 15px; font-weight: 700; }
+.screen-header .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.btn-group { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+.zpl-btn {
+  background: #334155; color: #93c5fd; border: 1px solid #475569;
+  border-radius: 6px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.print-btn {
+  background: #22c55e; color: #fff; border: none; border-radius: 6px;
+  padding: 7px 14px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.print-btn:disabled { opacity: .6; cursor: not-allowed; }
+.not-found-box {
+  display: none; background: #7f1d1d; color: #fca5a5;
+  border: 1px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin: 12px 16px 0;
+}
+.label-grid { display: flex; flex-wrap: wrap; gap: 12px; padding: 20px; justify-content: flex-start; }
+.label {
+  width: 4cm; height: 3cm; background: #fff; border: 1px solid #bbb;
+  border-radius: 2px; padding: 2.5px 4px 2px 4px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+@media screen {
+  .label-grid { gap: 16px; padding: 24px; }
+  .label { transform: scale(1.9); transform-origin: top left; margin-right: calc(4cm * .9); margin-bottom: calc(3cm * .9); }
+}
+.label-name { font-size: 6.5pt; font-weight: 700; color: #111; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; flex-shrink: 0; padding-top: 1.5px; }
+.label-price-wrap { flex: 1; display: flex; align-items: center; justify-content: center; }
+.label-price { font-size: 20pt; font-weight: 900; color: #000; text-align: center; line-height: 1.05; letter-spacing: -.5px; }
+.label-bottom { flex-shrink: 0; height: 1.35cm; display: flex; flex-direction: column; }
+.label-barcode { flex: 1; display: flex; align-items: center; overflow: hidden; min-height: 0; }
+.label-barcode svg { width: 100%; height: 100%; display: block; }
+.label-barcode-num { font-size: 7pt; font-weight: 900; color: #000; text-align: center; font-family: 'Courier New', monospace; letter-spacing: 1px; flex-shrink: 0; line-height: 1.2; padding-bottom: 2px; }
+</style>
+</head>
+<body>
+<div class="screen-header">
+  <div>
+    <h1 id="header-title">라벨 로드 중…</h1>
+    <div class="sub" id="header-sub"></div>
+  </div>
+  <div class="btn-group">
+    <button class="zpl-btn" id="zpl-btn">⬇ ZPL 다운로드</button>
+    <button class="print-btn" id="zebra-btn">🦓 Zebra 직접 출력</button>
+  </div>
+</div>
+<div class="not-found-box" id="not-found-box">
+  <strong id="not-found-title">⚠ DB에서 찾지 못한 바코드</strong>
+  <div id="not-found-list" style="font-family:monospace;font-size:13px;line-height:1.8;margin-top:4px"></div>
+</div>
+<div class="label-grid" id="label-grid"></div>
+<script src="js/labels.js"></script>
+</body>
+</html>

@@ -15,11 +15,12 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-SUPABASE_URL = os.environ['SUPABASE_URL']
-SUPABASE_KEY = os.environ['SUPABASE_KEY']   # service role key 사용
-KIOSK_USER   = os.environ['KIOSK_USER']
-KIOSK_PASS   = os.environ['KIOSK_PASS']
-BASE_URL     = 'https://asp.kiwoompaypos.co.kr'
+SUPABASE_URL    = os.environ['SUPABASE_URL']
+SUPABASE_KEY    = os.environ['SUPABASE_KEY']   # service role key 사용
+KIOSK_COMPANY   = os.environ['KIOSK_COMPANY']  # 회사코드: 12157
+KIOSK_USER      = os.environ['KIOSK_USER']
+KIOSK_PASS      = os.environ['KIOSK_PASS']
+BASE_URL        = 'https://asp.kiwoompaypos.co.kr'
 
 HDR = {
     'apikey': SUPABASE_KEY,
@@ -80,17 +81,18 @@ def run_kiosk(excel_path):
     W = WebDriverWait(driver, 20)
 
     try:
-        # ── 1. 로그인 ─────────────────────────────────────────────────────────
+        # ── 1. 로그인 (3개 필드: 회사코드 / 아이디 / 비밀번호) ──────────────
         driver.get(BASE_URL)
-        W.until(EC.presence_of_element_located(
-            (By.CSS_SELECTOR, 'input[name="id"], input[name="userId"], input[type="text"]')
-        )).send_keys(KIOSK_USER)
-        driver.find_element(
-            By.CSS_SELECTOR, 'input[name="password"], input[type="password"]'
-        ).send_keys(KIOSK_PASS)
-        driver.find_element(
-            By.CSS_SELECTOR, 'button[type="submit"], input[type="submit"]'
-        ).click()
+        # 화면에 보이는 input 순서대로 인덱스로 접근
+        inputs = W.until(lambda d: [
+            el for el in d.find_elements(By.CSS_SELECTOR, 'input')
+            if el.get_attribute('type') in ('text', 'password', '')
+            and el.is_displayed()
+        ])
+        inputs[0].send_keys(KIOSK_COMPANY)   # 회사코드
+        inputs[1].send_keys(KIOSK_USER)      # 아이디
+        inputs[2].send_keys(KIOSK_PASS)      # 비밀번호
+        driver.find_element(By.XPATH, '//button[contains(text(),"로그인")]').click()
         log('로그인 완료')
 
         # ── 2. 상품 관리 메뉴 클릭 ────────────────────────────────────────────

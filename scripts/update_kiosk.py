@@ -101,6 +101,26 @@ def run_kiosk(excel_path):
         time.sleep(8)                        # 로그인 후 메뉴 JS 렌더링 대기
         log('로그인 완료')
 
+        # ── 1-b. 로그인 후 팝업 닫기 (비밀번호 변경 안내, 공지사항 등) ─────────
+        popup_close_ids = ['btnChangeNextTimePw', 'btnCloseChangeInfo', 'btnNoticeClose', 'btnSlidingExpiration']
+        for pid in popup_close_ids:
+            try:
+                btn = driver.find_element(By.ID, pid)
+                if btn.is_displayed():
+                    btn.click()
+                    time.sleep(0.5)
+            except Exception:
+                pass
+        # 혹시 남은 .close 버튼도 닫기
+        for close_btn in driver.find_elements(By.CSS_SELECTOR, 'button.close'):
+            try:
+                if close_btn.is_displayed():
+                    close_btn.click()
+                    time.sleep(0.3)
+            except Exception:
+                pass
+        time.sleep(1)
+
         # ── 2+3. 상품 등록(본사) 직접 클릭 (즐겨찾기 or 메뉴, 한/영 대응) ────
         W.until(EC.element_to_be_clickable(
             (By.XPATH, '//*['

@@ -142,21 +142,10 @@ def run_kiosk(excel_path):
         )).click()
         log('엑셀 업로드 팝업 열기')
 
-        # ── 5. 동일 상품 덮어쓰기 선택 (인덱스 1 = 두번째 옵션) ────────────────
-        sel_el = W.until(EC.presence_of_element_located((By.TAG_NAME, 'select')))
+        # ── 5. cmbUploadType → Cover the same goods (덮어쓰기) ─────────────────
+        sel_el = W.until(EC.presence_of_element_located((By.ID, 'cmbUploadType')))
         sel = Select(sel_el)
-        # 텍스트 매칭 먼저 시도, 실패하면 마지막 옵션 선택 (건너뛰기=0, 덮어쓰기=마지막)
-        overwrite_texts = ['동일 상품 덮어쓰기', 'Overwrite duplicate', 'Overwrite', 'Update existing']
-        selected = False
-        for txt in overwrite_texts:
-            try:
-                sel.select_by_visible_text(txt); selected = True; break
-            except Exception:
-                continue
-        if not selected:
-            # 마지막 옵션 선택 (건너뛰기가 기본값이므로 마지막이 덮어쓰기)
-            options = sel.options
-            sel.select_by_index(len(options) - 1)
+        sel.select_by_visible_text('Cover the same goods')
         log(f'덮어쓰기 옵션 선택: {sel.first_selected_option.text}')
 
         # ── 6. 파일 업로드 ────────────────────────────────────────────────────

@@ -241,15 +241,14 @@ function renderScanList() {
             ${soldTag}
           </div>
         </div>
-        <div class="card-right">
-          <div class="metrics">
-            <span class="badge ${item.isLongterm?'badge-red':'badge-green'}">📍 ${item.daysInStore}일</span>
-            <span class="badge badge-neutral">⏳ ${item.totalDays}일</span>
-          </div>
-          ${rm}
-        </div>
+        <div class="card-right">${rm}</div>
       </div>
       <div class="card-price">${item.price.toLocaleString()}<span class="unit">원</span></div>
+      <div class="days-text">
+        <span class="days-store${item.isLongterm?' days-lt':''}">여기온지 ${item.daysInStore}일 됐어요</span>
+        <span class="days-sep">·</span>
+        <span class="days-total">안팔린지 ${item.totalDays}일째 😢</span>
+      </div>
       <div class="date-row">
         <span class="date-pill date-initial">최초입고 ${fmtDate(item.createdAt)}</span>
         <span class="date-pill date-arrival">이 매장 ${fmtDate(item.arrivalDate)}</span>
@@ -314,17 +313,16 @@ function processCard(item) {
   return `<label class="proc-card${item.isLongterm?' card-lt':''}">
     <input type="checkbox" class="proc-cb" data-bc="${escapeHtml(item.barcode)}" ${chk}>
     <div class="proc-info">
-      <div class="proc-top">
-        <div class="item-name" style="flex:1;min-width:0">${escapeHtml(item.displayName)}</div>
-        <div class="metrics">
-          <span class="badge ${item.isLongterm?'badge-red':'badge-green'}">📍 ${item.daysInStore}일</span>
-          <span class="badge badge-neutral">⏳ ${item.totalDays}일</span>
-        </div>
-      </div>
+      <div class="item-name">${escapeHtml(item.displayName)}</div>
       <div class="card-sub" style="margin-top:3px">
         <span class="bc-text">${escapeHtml(item.barcode)}</span>
       </div>
       <div class="card-price" style="margin-top:8px">${item.price.toLocaleString()}<span class="unit">원</span></div>
+      <div class="days-text">
+        <span class="days-store${item.isLongterm?' days-lt':''}">여기온지 ${item.daysInStore}일 됐어요</span>
+        <span class="days-sep">·</span>
+        <span class="days-total">안팔린지 ${item.totalDays}일째 😢</span>
+      </div>
       <div class="date-row">
         <span class="date-pill date-initial">최초입고 ${fmtDate(item.createdAt)}</span>
         <span class="date-pill date-arrival">이 매장 ${fmtDate(item.arrivalDate)}</span>

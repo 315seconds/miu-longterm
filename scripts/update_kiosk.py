@@ -13,6 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 
 SUPABASE_URL    = os.environ['SUPABASE_URL']
@@ -96,7 +97,7 @@ def run_kiosk(excel_path):
         inputs[0].send_keys(KIOSK_COMPANY)   # 회사코드
         inputs[1].send_keys(KIOSK_USER)      # 아이디
         inputs[2].send_keys(KIOSK_PASS)      # 비밀번호
-        driver.find_element(By.XPATH, '//button[contains(text(),"로그인")]').click()
+        inputs[2].send_keys(Keys.RETURN)     # Enter로 로그인 (버튼 구조 불문)
         log('로그인 완료')
 
         # ── 2. 상품 관리 메뉴 클릭 ────────────────────────────────────────────

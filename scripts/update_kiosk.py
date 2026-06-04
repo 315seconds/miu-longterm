@@ -98,18 +98,20 @@ def run_kiosk(excel_path):
         inputs[1].send_keys(KIOSK_USER)      # 아이디
         inputs[2].send_keys(KIOSK_PASS)      # 비밀번호
         inputs[2].send_keys(Keys.RETURN)     # Enter로 로그인 (버튼 구조 불문)
+        time.sleep(3)                        # 로그인 후 홈 화면 로드 대기
         log('로그인 완료')
 
         # ── 2. 상품 관리 메뉴 클릭 ────────────────────────────────────────────
         W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//*[self::a or self::li or self::span][contains(text(),"상품 관리") or contains(text(),"상품관리")]')
+            (By.XPATH, '//*[contains(text(),"상품 관리") or contains(text(),"상품관리")]')
         )).click()
-        time.sleep(0.5)
+        time.sleep(1)
 
         # ── 3. 상품 등록 (본사) 클릭 ──────────────────────────────────────────
         W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//a[contains(text(),"상품 등록") and contains(text(),"본사")]')
+            (By.XPATH, '//*[contains(text(),"상품 등록") and (contains(text(),"본사") or contains(text(),"(본사)"))]')
         )).click()
+        time.sleep(2)
         log('상품 등록(본사) 진입')
 
         # ── 4. 엑셀 업로드 버튼 클릭 ─────────────────────────────────────────

@@ -365,7 +365,10 @@ body {
 <div id="step-scan" style="display:none">
   <div class="scan-header">
     <div class="scan-header-left">
-      <h2 id="scan-store-label"></h2>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="scan-back-btn" class="back-btn" style="font-size:13px">← 변경</button>
+        <h2 id="scan-store-label"></h2>
+      </div>
       <p id="scan-count">0개 스캔됨</p>
     </div>
     <button class="btn btn-primary" id="process-btn" disabled>처리하기 →</button>
@@ -376,7 +379,6 @@ body {
   </div>
   <div id="scan-list" class="content"></div>
   <div class="bottom-pad"></div>
-  <button id="scan-back-btn" style="display:none"></button>
 </div>
 
 <!-- STEP 3: 처리 선택 -->

@@ -140,7 +140,15 @@ function initScanStep() {
   inp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => tryAdd(inp.value), 500); });
   inp.addEventListener('compositionend', () => { clearTimeout(timer); timer = setTimeout(() => tryAdd(inp.value), 500); });
 
-  document.getElementById('scan-back-btn').onclick = () => showStep('setup');
+  document.getElementById('scan-back-btn').onclick = async () => {
+    if (S.items.size > 0) {
+      const ok = await appConfirm('매장 선택으로 돌아가면 스캔된 바코드가 모두 사라집니다.\n계속할까요?');
+      if (!ok) return;
+    }
+    clearSavedState();
+    S.items = new Map();
+    showStep('setup');
+  };
   document.getElementById('process-btn').onclick = () => {
     const valid = [...S.items.values()].filter(i => !i.loading && !i.notFound && !i.error);
     if (!valid.length) { appAlert('스캔된 바코드가 없습니다.'); return; }
@@ -248,6 +256,8 @@ function renderScanList() {
   list.querySelectorAll('.remove-btn').forEach(btn => {
     btn.onclick = () => { S.items.delete(btn.dataset.bc); renderScanList(); };
   });
+
+  saveState();
 }
 
 // ── STEP 3: 처리 ─────────────────────────────────────────────────────────────
@@ -544,9 +554,47 @@ function initMoveStep() {
   };
 }
 
+// ── sessionStorage 저장/복구 ─────────────────────────────────────────────────
+
+const STORAGE_KEY = 'miu-longterm-state';
+
+function saveState() {
+  // loading 중인 항목은 제외하고 저장
+  const items = [...S.items.entries()].filter(([, v]) => !v.loading);
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+    store: S.store,
+    threshold: S.threshold,
+    items,
+  }));
+}
+
+function loadSavedState() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data.store) return false;
+    S.store = data.store;
+    S.threshold = data.threshold || 60;
+    S.items = new Map(data.items || []);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function clearSavedState() {
+  sessionStorage.removeItem(STORAGE_KEY);
+}
+
 // ── 초기화 ───────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  showStep('setup');
-  initSetup();
+  if (loadSavedState() && S.store) {
+    showStep('scan');
+    initScanStep();
+  } else {
+    showStep('setup');
+    initSetup();
+  }
 });

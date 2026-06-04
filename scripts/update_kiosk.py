@@ -159,13 +159,19 @@ def run_kiosk(excel_path):
         # ── 7. 팝업 저장 클릭 (btnSaveExcel) — JS click ──────────────────────
         save_btn = W.until(EC.presence_of_element_located((By.ID, 'btnSaveExcel')))
         driver.execute_script('arguments[0].click();', save_btn)
-        time.sleep(3)
+        # 저장 후 "저장되었습니다" alert 처리
+        W.until(EC.alert_is_present())
+        driver.switch_to.alert.accept()
+        time.sleep(1)
         log('저장 완료')
 
         # ── 8. 팝업 닫기 (modal-footer Close 버튼) ────────────────────────────
-        close_btn = driver.find_element(By.CSS_SELECTOR, '.modal-footer button')
-        driver.execute_script('arguments[0].click();', close_btn)
-        time.sleep(1)
+        try:
+            close_btn = driver.find_element(By.CSS_SELECTOR, '.modal-footer button')
+            driver.execute_script('arguments[0].click();', close_btn)
+            time.sleep(1)
+        except Exception:
+            pass  # 알림 수락 후 모달이 이미 닫혔을 수 있음
 
         # ── 9. 자료수신 클릭 (btnReqDownload, iframe 내) ─────────────────────
         req_btn = W.until(EC.element_to_be_clickable((By.ID, 'btnReqDownload')))

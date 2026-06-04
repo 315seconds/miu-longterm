@@ -161,22 +161,23 @@ def run_kiosk(excel_path):
         time.sleep(2)  # 업로드 후 그리드 갱신 대기
         log('파일 업로드 완료')
 
-        # ── 7. 저장 클릭 (한/영 대응) ────────────────────────────────────────
-        driver.find_element(
-            By.XPATH, '//button[contains(text(),"저장") or contains(text(),"Save") or contains(text(),"F4")]'
-        ).click()
+        # ── 7. 저장 클릭 — JS click으로 오버레이 우회 ────────────────────────
+        save_btn = W.until(EC.presence_of_element_located((By.ID, 'btnSave')))
+        driver.execute_script('arguments[0].click();', save_btn)
         time.sleep(3)  # 저장 처리 대기
         log('저장 완료')
 
-        # ── 8. 닫기 클릭 (한/영 대응) ────────────────────────────────────────
-        W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//button[contains(text(),"닫기") or contains(text(),"Close") or contains(text(),"close")]')
-        )).click()
+        # ── 8. 닫기 클릭 — JS click ───────────────────────────────────────────
+        close_btn = W.until(EC.presence_of_element_located(
+            (By.XPATH, '//button[@id="btnClose" or contains(text(),"닫기") or contains(text(),"Close")]')
+        ))
+        driver.execute_script('arguments[0].click();', close_btn)
         time.sleep(1)
 
-        # ── 9. 자료수신 클릭 (한/영 대응) ────────────────────────────────────
+        # ── 9. 자료수신 — iframe 벗어나서 메인 페이지에서 클릭 ────────────────
+        driver.switch_to.default_content()
         W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//button[contains(text(),"자료수신") or contains(text(),"Data") or contains(text(),"Receive")]')
+            (By.XPATH, '//a[contains(text(),"자료수신") or contains(text(),"Data Receive")]')
         )).click()
 
         # ── 10. 브라우저 confirm → OK ─────────────────────────────────────────

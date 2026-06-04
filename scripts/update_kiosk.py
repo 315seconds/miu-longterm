@@ -3,7 +3,7 @@
 키오스크 가격 업데이트 스크립트
 Supabase kiosk_updates 테이블 폴링 → 엑셀 생성 → Selenium 자동 업로드
 """
-import os, sys, time, tempfile
+import os, sys, time
 from datetime import datetime, timezone
 import requests
 from openpyxl import Workbook
@@ -65,10 +65,10 @@ def make_excel(rows):
     ws.append(['바코드', '판매단가'])
     for row in rows:
         ws.append([str(row['barcode']), int(row['new_price'])])
-    f = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    wb.save(f.name)
-    f.close()
-    return f.name
+    # /tmp 대신 스크립트 옆 디렉토리 사용 (headless Chrome 파일 접근 제한 우회)
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kiosk_upload.xlsx')
+    wb.save(path)
+    return path
 
 
 def run_kiosk(excel_path):

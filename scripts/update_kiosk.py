@@ -16,10 +16,11 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
 SUPABASE_URL    = os.environ['SUPABASE_URL']
-SUPABASE_KEY    = os.environ['SUPABASE_KEY']   # service role key 사용
-KIOSK_COMPANY   = os.environ['KIOSK_COMPANY']  # 회사코드: 12157
-KIOSK_USER      = os.environ['KIOSK_USER']
-KIOSK_PASS      = os.environ['KIOSK_PASS']
+SUPABASE_KEY    = os.environ.get('SUPABASE_SERVICE_KEY') or os.environ['SUPABASE_ANON_KEY']
+KIOSK_COMPANY   = os.environ.get('KIWOOM_COMPANY', os.environ.get('KIOSK_COMPANY', '12157'))
+KIOSK_USER      = os.environ.get('KIWOOM_USERID',  os.environ.get('KIOSK_USER', ''))
+KIOSK_PASS      = os.environ.get('KIWOOM_USERPASS', os.environ.get('KIOSK_PASS', ''))
+CHROMEDRIVER    = os.environ.get('CHROMEDRIVER_PATH')  # snap chromedriver 경로
 BASE_URL        = 'https://asp.kiwoompaypos.co.kr'
 
 HDR = {
@@ -76,7 +77,10 @@ def run_kiosk(excel_path):
     opts.add_argument('--disable-dev-shm-usage')
     opts.add_argument('--window-size=1400,900')
 
-    service = Service(ChromeDriverManager().install())
+    if CHROMEDRIVER:
+        service = Service(CHROMEDRIVER)
+    else:
+        service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=opts)
     W = WebDriverWait(driver, 20)
 

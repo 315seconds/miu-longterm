@@ -147,8 +147,12 @@ body {
   font-size: 13px; font-weight: 700; letter-spacing: 0.2px;
   white-space: nowrap; flex-shrink: 0;
 }
-.badge-red   { background: var(--error);   color: #fff; }
-.badge-green { background: var(--success); color: #fff; }
+.badge-red    { background: var(--error);   color: #fff; }
+.badge-green  { background: var(--success); color: #fff; }
+.badge-neutral{ background: var(--surface-strong); color: var(--body); }
+
+/* 두 지표 세로 스택 */
+.metrics { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
 
 /* ── date pills ── */
 .date-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }

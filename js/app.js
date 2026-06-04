@@ -187,6 +187,7 @@ async function addItemToScan(barcode) {
     }
 
     const daysInStore = daysDiff(arrivalStr);
+    const totalDays   = daysDiff(item.created_at);
     S.items.set(barcode, {
       barcode,
       price: item.price || 0,
@@ -195,6 +196,7 @@ async function addItemToScan(barcode) {
       createdAt: item.created_at,
       arrivalDate: arrivalStr,
       daysInStore,
+      totalDays,
       isLongterm: daysInStore >= S.threshold,
       status: item.status,
     });
@@ -226,7 +228,6 @@ function renderScanList() {
     if (item.notFound) return `<div class="scan-card card-err"><div class="row-sb"><span class="bc-text">${escapeHtml(item.barcode)}</span>${rm}</div><div class="err-text">⚠ DB에서 찾을 수 없음</div></div>`;
     if (item.error) return `<div class="scan-card card-err"><div class="row-sb"><span class="bc-text">${escapeHtml(item.barcode)}</span>${rm}</div><div class="err-text">${escapeHtml(item.error)}</div></div>`;
 
-    const badge = `<span class="badge ${item.isLongterm?'badge-red':'badge-green'}">${item.daysInStore}일</span>`;
     const soldTag = item.status==='sold' ? '<span class="sold-tag">판매됨</span>' : '';
 
     return `<div class="scan-card${item.isLongterm?' card-lt':''}">
@@ -241,7 +242,10 @@ function renderScanList() {
           </div>
         </div>
         <div class="card-right">
-          ${badge}
+          <div class="metrics">
+            <span class="badge ${item.isLongterm?'badge-red':'badge-green'}">📍 ${item.daysInStore}일</span>
+            <span class="badge badge-neutral">⏳ ${item.totalDays}일</span>
+          </div>
           ${rm}
         </div>
       </div>
@@ -306,14 +310,16 @@ function initProcessStep() {
 }
 
 function processCard(item) {
-  const badge = `<span class="badge ${item.isLongterm?'badge-red':'badge-green'}">${item.daysInStore}일</span>`;
   const chk = S.selected.has(item.barcode) ? 'checked' : '';
   return `<label class="proc-card${item.isLongterm?' card-lt':''}">
     <input type="checkbox" class="proc-cb" data-bc="${escapeHtml(item.barcode)}" ${chk}>
     <div class="proc-info">
       <div class="proc-top">
         <div class="item-name" style="flex:1;min-width:0">${escapeHtml(item.displayName)}</div>
-        ${badge}
+        <div class="metrics">
+          <span class="badge ${item.isLongterm?'badge-red':'badge-green'}">📍 ${item.daysInStore}일</span>
+          <span class="badge badge-neutral">⏳ ${item.totalDays}일</span>
+        </div>
       </div>
       <div class="card-sub" style="margin-top:3px">
         <span class="bc-text">${escapeHtml(item.barcode)}</span>

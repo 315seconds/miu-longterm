@@ -222,12 +222,22 @@ function renderScanList() {
     const soldTag = item.status==='sold' ? '<span class="sold-tag">판매됨</span>' : '';
 
     return `<div class="scan-card${item.isLongterm?' card-lt':''}">
-      <div class="row-sb">
-        <div class="row-gap">${badge}<span class="bc-text">${escapeHtml(item.barcode)}</span>${soldTag}</div>
-        ${rm}
+      <div class="card-top">
+        <div class="card-main">
+          <div class="item-name">${escapeHtml(item.displayName)}</div>
+          <div class="card-sub">
+            <span class="bc-text">${escapeHtml(item.barcode)}</span>
+            <span class="dot-sep">·</span>
+            <span class="loc-text">${escapeHtml(item.location)}</span>
+            ${soldTag}
+          </div>
+        </div>
+        <div class="card-right">
+          ${badge}
+          ${rm}
+        </div>
       </div>
-      <div class="item-name">${escapeHtml(item.displayName)}</div>
-      <div class="meta">${item.price.toLocaleString()}원 · ${escapeHtml(item.location)}</div>
+      <div class="card-price">${item.price.toLocaleString()}<span class="unit">원</span></div>
       <div class="date-row">
         <span class="date-pill date-initial">최초입고 ${fmtDate(item.createdAt)}</span>
         <span class="date-pill date-arrival">이 매장 ${fmtDate(item.arrivalDate)}</span>
@@ -291,9 +301,14 @@ function processCard(item) {
   return `<label class="proc-card${item.isLongterm?' card-lt':''}">
     <input type="checkbox" class="proc-cb" data-bc="${escapeHtml(item.barcode)}" ${chk}>
     <div class="proc-info">
-      <div class="row-gap">${badge}<span class="bc-text">${escapeHtml(item.barcode)}</span></div>
-      <div class="item-name">${escapeHtml(item.displayName)}</div>
-      <div class="meta">${item.price.toLocaleString()}원</div>
+      <div class="proc-top">
+        <div class="item-name" style="flex:1;min-width:0">${escapeHtml(item.displayName)}</div>
+        ${badge}
+      </div>
+      <div class="card-sub" style="margin-top:3px">
+        <span class="bc-text">${escapeHtml(item.barcode)}</span>
+      </div>
+      <div class="card-price" style="margin-top:8px">${item.price.toLocaleString()}<span class="unit">원</span></div>
       <div class="date-row">
         <span class="date-pill date-initial">최초입고 ${fmtDate(item.createdAt)}</span>
         <span class="date-pill date-arrival">이 매장 ${fmtDate(item.arrivalDate)}</span>

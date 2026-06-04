@@ -143,23 +143,23 @@ body {
 /* ── badges ── */
 .badge {
   display: inline-flex; align-items: center;
-  padding: 3px 9px; border-radius: 9999px;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
-  white-space: nowrap;
+  padding: 4px 11px; border-radius: 9999px;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.2px;
+  white-space: nowrap; flex-shrink: 0;
 }
 .badge-red   { background: var(--error);   color: #fff; }
 .badge-green { background: var(--success); color: #fff; }
 
 /* ── date pills ── */
-.date-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.date-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .date-pill {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 8px; border-radius: 9999px;
+  display: inline-flex; align-items: center;
+  padding: 4px 10px; border-radius: 9999px;
   font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
   white-space: nowrap; color: var(--ink);
 }
-.date-initial { background: var(--blue-pastel); }  /* 최초 입고 — pastel blue */
-.date-arrival { background: var(--peach); }         /* 이 매장 도착 — peach */
+.date-initial { background: var(--blue-pastel); }
+.date-arrival { background: var(--peach); }
 
 /* ── sold tag ── */
 .sold-tag {
@@ -172,31 +172,44 @@ body {
 .scan-card {
   background: var(--surface-card);
   border: 1px solid var(--hairline);
+  border-left: 3px solid var(--hairline-strong);
   border-radius: 12px;
-  padding: 13px 14px;
+  padding: 14px 14px 12px 13px;
   margin-bottom: 8px;
 }
-.scan-card.card-lt {
-  border-color: #f5c0c0;
-  background: #fff8f8;
-}
+.scan-card.card-lt { border-left-color: var(--error); background: #fff8f8; }
 .scan-card.card-err { opacity: .75; }
+
+/* card inner layout */
+.card-top  { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.card-main { flex: 1; min-width: 0; }
+.card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+.card-sub  { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
+.card-price {
+  font-size: 20px; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.4px; margin-top: 10px; line-height: 1;
+}
+.card-price .unit { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 2px; }
+.loc-text { font-size: 12px; color: var(--muted); }
+.dot-sep  { color: var(--hairline-strong); font-size: 11px; }
 
 /* ── process cards ── */
 .proc-card {
   display: flex; align-items: flex-start; gap: 12px;
   background: var(--surface-card);
   border: 1px solid var(--hairline);
+  border-left: 3px solid var(--hairline-strong);
   border-radius: 12px;
-  padding: 13px 14px; margin-bottom: 8px;
+  padding: 14px 14px 12px 13px; margin-bottom: 8px;
   cursor: pointer;
 }
-.proc-card.card-lt { border-color: #f5c0c0; background: #fff8f8; }
+.proc-card.card-lt { border-left-color: var(--error); background: #fff8f8; }
 .proc-card input[type="checkbox"] {
-  width: 17px; height: 17px; flex-shrink: 0; margin-top: 3px;
+  width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px;
   accent-color: var(--primary);
 }
 .proc-info { flex: 1; min-width: 0; }
+.proc-top  { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 
 /* ── item cards (price edit) ── */
 .item-card {

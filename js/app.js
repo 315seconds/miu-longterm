@@ -489,6 +489,11 @@ async function submitPriceChanges() {
     done.style.display = 'block';
     done.scrollIntoView({ behavior:'smooth', block:'center' });
 
+    // 완료 후 뒤로가기 → 홈(매장선택)으로
+    const backBtn = document.getElementById('price-back');
+    backBtn.textContent = '← 홈으로';
+    backBtn.onclick = () => { clearSavedState(); S.items = new Map(); showStep('setup'); initSetup(); };
+
     if (S.priceMode === 'bulk') {
       document.getElementById('bulk-notice').style.display = 'block';
     } else {
@@ -524,6 +529,8 @@ async function submitKioskUpdate() {
   btn.textContent = '✅ 전송 완료';
   btn.style.background = '#166534';
   status.textContent = `${S.lastChanges.length}개 전송됨 · 30초 내 자동 반영됩니다`;
+  status.style.color = '#166534';
+  status.style.fontWeight = '500';
 }
 
 // ── STEP 4B: 이동 복사 ───────────────────────────────────────────────────────

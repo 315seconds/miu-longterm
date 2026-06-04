@@ -156,33 +156,20 @@ def run_kiosk(excel_path):
         time.sleep(2)  # 업로드 후 그리드 갱신 대기
         log('파일 업로드 완료')
 
-        # ── 7. 저장 클릭 — JS click으로 오버레이 우회 ────────────────────────
-        save_btn = W.until(EC.presence_of_element_located((By.ID, 'btnSave')))
+        # ── 7. 팝업 저장 클릭 (btnSaveExcel) — JS click ──────────────────────
+        save_btn = W.until(EC.presence_of_element_located((By.ID, 'btnSaveExcel')))
         driver.execute_script('arguments[0].click();', save_btn)
-        time.sleep(2)
-        # 저장 후 알림창이 뜨면 닫기
-        try:
-            alert = driver.switch_to.alert
-            log(f'저장 알림: {alert.text}')
-            alert.accept()
-            time.sleep(1)
-        except Exception:
-            pass
-        time.sleep(2)
+        time.sleep(3)
         log('저장 완료')
 
-        # ── 8. 닫기 클릭 — JS click ───────────────────────────────────────────
-        close_btn = W.until(EC.presence_of_element_located(
-            (By.XPATH, '//button[@id="btnClose" or contains(text(),"닫기") or contains(text(),"Close")]')
-        ))
+        # ── 8. 팝업 닫기 (modal-footer Close 버튼) ────────────────────────────
+        close_btn = driver.find_element(By.CSS_SELECTOR, '.modal-footer button')
         driver.execute_script('arguments[0].click();', close_btn)
         time.sleep(1)
 
-        # ── 9. 자료수신 — iframe 벗어나서 메인 페이지에서 클릭 ────────────────
-        driver.switch_to.default_content()
-        W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//a[contains(text(),"자료수신") or contains(text(),"Data Receive")]')
-        )).click()
+        # ── 9. 자료수신 클릭 (btnReqDownload, iframe 내) ─────────────────────
+        req_btn = W.until(EC.element_to_be_clickable((By.ID, 'btnReqDownload')))
+        driver.execute_script('arguments[0].click();', req_btn)
 
         # ── 10. 브라우저 confirm → OK ─────────────────────────────────────────
         W.until(EC.alert_is_present())

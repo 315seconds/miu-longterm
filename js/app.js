@@ -220,8 +220,6 @@ function renderScanList() {
 
     const badge = `<span class="badge ${item.isLongterm?'badge-red':'badge-green'}">${item.daysInStore}일</span>`;
     const soldTag = item.status==='sold' ? '<span class="sold-tag">판매됨</span>' : '';
-    const arrLine = item.arrivalDate !== item.createdAt
-      ? `<div class="meta">이 매장 도착: ${fmtDate(item.arrivalDate)}</div>` : '';
 
     return `<div class="scan-card${item.isLongterm?' card-lt':''}">
       <div class="row-sb">
@@ -229,8 +227,11 @@ function renderScanList() {
         ${rm}
       </div>
       <div class="item-name">${escapeHtml(item.displayName)}</div>
-      <div class="meta">${item.price.toLocaleString()}원 · ${escapeHtml(item.location)} · 최초입고 ${fmtDate(item.createdAt)}</div>
-      ${arrLine}
+      <div class="meta">${item.price.toLocaleString()}원 · ${escapeHtml(item.location)}</div>
+      <div class="date-row">
+        <span class="date-pill date-initial">최초입고 ${fmtDate(item.createdAt)}</span>
+        <span class="date-pill date-arrival">이 매장 ${fmtDate(item.arrivalDate)}</span>
+      </div>
     </div>`;
   }).join('') || '<div class="empty-msg">바코드를 스캔하면 여기에 표시됩니다</div>';
 
@@ -292,7 +293,11 @@ function processCard(item) {
     <div class="proc-info">
       <div class="row-gap">${badge}<span class="bc-text">${escapeHtml(item.barcode)}</span></div>
       <div class="item-name">${escapeHtml(item.displayName)}</div>
-      <div class="meta">${item.price.toLocaleString()}원 · 이 매장 ${fmtDate(item.arrivalDate)} 도착</div>
+      <div class="meta">${item.price.toLocaleString()}원</div>
+      <div class="date-row">
+        <span class="date-pill date-initial">최초입고 ${fmtDate(item.createdAt)}</span>
+        <span class="date-pill date-arrival">이 매장 ${fmtDate(item.arrivalDate)}</span>
+      </div>
     </div>
   </label>`;
 }

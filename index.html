@@ -4,225 +4,322 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>장기재고 처리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-client.js"></script>
 <style>
+/* ── tokens ── */
+:root {
+  --primary:        #f54e00;
+  --primary-active: #d04200;
+  --ink:            #26251e;
+  --body:           #5a5852;
+  --muted:          #807d72;
+  --muted-soft:     #a09c92;
+  --hairline:       #e6e5e0;
+  --hairline-soft:  #efeee8;
+  --hairline-strong:#cfcdc4;
+  --canvas:         #f7f7f4;
+  --canvas-soft:    #fafaf7;
+  --surface-card:   #ffffff;
+  --surface-strong: #e6e5e0;
+  --error:          #cf2d56;
+  --success:        #1f8a65;
+  /* timeline pastels — date pills */
+  --peach:          #dfa88f;   /* 이 매장 도착 */
+  --blue-pastel:    #9fbbe0;   /* 최초 입고 */
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-  background: #0f172a;
-  color: #f1f5f9;
-  font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', Arial, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, 'Helvetica Neue', Helvetica, Arial, sans-serif;
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── layout ── */
 .content { padding: 16px; }
-.bottom-pad { height: 80px; }
+.bottom-pad { height: 88px; }
 
-/* ── app header (setup) ── */
+/* ── sticky headers ── */
 .app-header {
-  background: #1e293b;
+  background: var(--surface-card);
   padding: 16px;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--hairline);
   position: sticky; top: 0; z-index: 10;
 }
-.app-header h1 { font-size: 18px; font-weight: 800; }
-.app-title-sub { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+.app-header h1 {
+  font-size: 18px; font-weight: 600; color: var(--ink); letter-spacing: -0.2px;
+}
+.app-title-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
-/* ── page header (inner steps) ── */
 .page-header {
   display: flex; align-items: center; gap: 10px;
-  background: #1e293b; padding: 12px 16px;
+  background: var(--surface-card); padding: 13px 16px;
   position: sticky; top: 0; z-index: 10;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--hairline);
 }
 .back-btn {
-  background: none; border: none; color: #60a5fa;
-  font-size: 14px; cursor: pointer; padding: 4px 0; white-space: nowrap;
+  background: none; border: none; color: var(--primary);
+  font-size: 14px; font-weight: 500; cursor: pointer; padding: 4px 0; white-space: nowrap;
 }
-.page-title { font-size: 15px; font-weight: 700; }
+.page-title { font-size: 15px; font-weight: 600; color: var(--ink); }
 
-/* ── scan header ── */
 .scan-header {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 10px; background: #1e293b;
-  padding: 12px 16px; border-bottom: 1px solid #334155;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--surface-card); padding: 12px 16px;
+  border-bottom: 1px solid var(--hairline);
   position: sticky; top: 0; z-index: 10;
 }
+.scan-header-left h2 { font-size: 14px; font-weight: 600; color: var(--ink); }
+.scan-header-left p  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
 .scan-input-wrap {
   padding: 10px 16px;
-  background: #1e293b;
-  border-bottom: 1px solid #334155;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--hairline);
   position: sticky; top: 57px; z-index: 9;
 }
 .scan-input {
-  width: 100%; background: #0f172a; border: 1.5px solid #334155;
-  border-radius: 10px; padding: 11px 14px;
-  color: #f1f5f9; font-size: 15px; outline: none;
+  width: 100%;
+  background: var(--canvas);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 8px;
+  padding: 11px 14px;
+  color: var(--ink);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
 }
-.scan-input:focus { border-color: #3b82f6; }
+.scan-input:focus { border-color: var(--primary); }
+.scan-input::placeholder { color: var(--muted-soft); }
 
-/* ── form (setup) ── */
+/* ── forms ── */
 .form-group { margin-bottom: 20px; }
-.form-label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
 .form-select, .form-input {
-  width: 100%; background: #1e293b; border: 1.5px solid #334155;
-  border-radius: 10px; padding: 11px 14px; color: #f1f5f9;
-  font-size: 15px; outline: none; appearance: none;
+  width: 100%;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 8px;
+  padding: 11px 14px;
+  color: var(--ink);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  appearance: none;
 }
-.form-select:focus, .form-input:focus { border-color: #3b82f6; }
+.form-select:focus, .form-input:focus { border-color: var(--primary); }
 
 /* ── buttons ── */
 .btn {
-  border: none; border-radius: 10px; padding: 12px 16px;
-  font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s;
+  border: none; border-radius: 8px; padding: 11px 16px;
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: opacity .12s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
-.btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn-block { width: 100%; display: block; }
-.btn-primary { background: #3b82f6; color: #fff; }
-.btn-primary:hover:not(:disabled) { background: #2563eb; }
-.btn-outline  { background: #1e293b; color: #94a3b8; border: 1.5px solid #334155; }
-.btn-price    { background: #f59e0b; color: #000; }
-.btn-price:hover:not(:disabled) { background: #d97706; }
-.btn-move     { background: #6366f1; color: #fff; }
-.btn-move:hover:not(:disabled) { background: #4f46e5; }
-.btn-green    { background: #22c55e; color: #000; font-weight: 800; }
-.btn-kiosk    { background: #0ea5e9; color: #fff; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-block { width: 100%; display: flex; }
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--primary-active); }
+
+.btn-secondary {
+  background: var(--surface-card); color: var(--ink);
+  border: 1px solid var(--hairline-strong);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--canvas); }
+
+.btn-ink { background: var(--ink); color: var(--canvas); }
+.btn-ink:hover:not(:disabled) { opacity: .85; }
+
+.btn-success { background: var(--success); color: #fff; }
+.btn-outline { background: transparent; color: var(--body); border: 1px solid var(--hairline-strong); }
 
 /* ── badges ── */
 .badge {
-  display: inline-block; padding: 2px 8px; border-radius: 99px;
-  font-size: 12px; font-weight: 700; white-space: nowrap;
+  display: inline-flex; align-items: center;
+  padding: 3px 9px; border-radius: 9999px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+  white-space: nowrap;
 }
-.badge-red   { background: #7f1d1d; color: #fca5a5; }
-.badge-green { background: #14532d; color: #86efac; }
-.sold-tag { background: #374151; color: #9ca3af; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+.badge-red   { background: var(--error);   color: #fff; }
+.badge-green { background: var(--success); color: #fff; }
+
+/* ── date pills ── */
+.date-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.date-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 9999px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+  white-space: nowrap; color: var(--ink);
+}
+.date-initial { background: var(--blue-pastel); }  /* 최초 입고 — pastel blue */
+.date-arrival { background: var(--peach); }         /* 이 매장 도착 — peach */
+
+/* ── sold tag ── */
+.sold-tag {
+  display: inline-block; padding: 2px 7px; border-radius: 4px;
+  background: var(--surface-strong); color: var(--muted);
+  font-size: 11px; font-weight: 500;
+}
 
 /* ── scan cards ── */
 .scan-card {
-  background: #1e293b; border-radius: 12px;
-  padding: 12px 14px; margin-bottom: 10px;
-  border: 1.5px solid #334155;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 13px 14px;
+  margin-bottom: 8px;
 }
-.scan-card.card-lt { border-color: #7f1d1d; background: #1a0f0f; }
-.scan-card.card-err { border-color: #374151; opacity: .8; }
+.scan-card.card-lt {
+  border-color: #f5c0c0;
+  background: #fff8f8;
+}
+.scan-card.card-err { opacity: .75; }
 
 /* ── process cards ── */
 .proc-card {
   display: flex; align-items: flex-start; gap: 12px;
-  background: #1e293b; border-radius: 12px;
-  padding: 12px 14px; margin-bottom: 8px;
-  border: 1.5px solid #334155; cursor: pointer;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 13px 14px; margin-bottom: 8px;
+  cursor: pointer;
 }
-.proc-card.card-lt { border-color: #7f1d1d; background: #1a0f0f; }
-.proc-card input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; accent-color: #f59e0b; }
+.proc-card.card-lt { border-color: #f5c0c0; background: #fff8f8; }
+.proc-card input[type="checkbox"] {
+  width: 17px; height: 17px; flex-shrink: 0; margin-top: 3px;
+  accent-color: var(--primary);
+}
 .proc-info { flex: 1; min-width: 0; }
 
 /* ── item cards (price edit) ── */
 .item-card {
-  background: #1e293b; border-radius: 12px;
-  padding: 12px 14px; margin-bottom: 8px;
-  border: 1.5px solid #334155;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 13px 14px; margin-bottom: 8px;
 }
 
 /* ── price inputs ── */
-.price-old { color: #94a3b8; font-size: 14px; min-width: 60px; }
+.price-old { color: var(--muted); font-size: 14px; min-width: 64px; }
 .price-input {
-  background: #0f172a; border: 1.5px solid #334155;
+  background: var(--canvas);
+  border: 1px solid var(--hairline-strong);
   border-radius: 8px; padding: 7px 10px;
-  color: #f1f5f9; font-size: 15px; font-weight: 700;
-  width: 110px; text-align: right;
+  color: var(--ink); font-size: 15px; font-weight: 600;
+  width: 110px; text-align: right; font-family: inherit;
 }
-.price-input:focus { outline: none; border-color: #3b82f6; }
-.price-input.changed { border-color: #f59e0b; color: #fbbf24; }
+.price-input:focus { outline: none; border-color: var(--primary); }
+.price-input.changed { border-color: var(--primary); color: var(--primary); }
 
 /* ── mode bar ── */
 .mode-bar { display: flex; gap: 6px; margin-bottom: 12px; }
 .mode-btn {
-  flex: 1; background: #1e293b; border: 1.5px solid #334155;
-  border-radius: 8px; padding: 9px; color: #94a3b8;
-  font-size: 13px; font-weight: 600; cursor: pointer;
+  flex: 1; background: var(--surface-card);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 8px; padding: 9px;
+  color: var(--body); font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: inherit;
 }
-.mode-btn.active { background: #f59e0b; border-color: #f59e0b; color: #000; }
-.bulk-box { display: none; background: #451a03; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.mode-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.bulk-box { display: none; background: #fff5f0; border: 1px solid #fcd0b8; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
 .bulk-box.open { display: block; }
 .bulk-input {
-  background: #0f172a; border: 1.5px solid #92400e;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline-strong);
   border-radius: 8px; padding: 7px 10px;
-  color: #fbbf24; font-size: 18px; font-weight: 700; width: 70px; text-align: center;
+  color: var(--primary); font-size: 18px; font-weight: 700;
+  width: 72px; text-align: center; font-family: inherit;
 }
-.bulk-input:focus { outline: none; border-color: #f59e0b; }
+.bulk-input:focus { outline: none; border-color: var(--primary); }
 
-/* ── action bar ── */
+/* ── action bar (fixed bottom) ── */
 .action-bar {
   position: fixed; bottom: 0; left: 0; right: 0;
-  background: #1e293b; border-top: 1px solid #334155;
+  background: var(--surface-card);
+  border-top: 1px solid var(--hairline);
   padding: 12px 16px;
   display: flex; align-items: center; gap: 8px;
 }
-.sel-count { font-size: 13px; color: #94a3b8; white-space: nowrap; }
+.sel-count { font-size: 13px; color: var(--muted); white-space: nowrap; }
 
 /* ── section headers ── */
 .section-hd {
-  font-size: 13px; font-weight: 700; padding: 6px 0;
-  margin-bottom: 8px; border-bottom: 1px solid #334155;
+  font-size: 11px; font-weight: 600; padding: 6px 0;
+  margin-bottom: 8px; letter-spacing: 0.6px; text-transform: uppercase;
+  border-bottom: 1px solid var(--hairline);
 }
-.red-hd   { color: #fca5a5; }
-.green-hd { color: #86efac; }
+.red-hd   { color: var(--error); }
+.green-hd { color: var(--success); }
 
 /* ── slack notice ── */
 .slack-notice {
-  background: #1c1917; border: 1px solid #78350f;
-  border-radius: 10px; padding: 12px 14px;
-  font-size: 13px; color: #fbbf24; margin-bottom: 14px; line-height: 1.6;
+  background: #fff5f0;
+  border: 1px solid #fcd0b8;
+  border-radius: 8px; padding: 12px 14px;
+  font-size: 13px; color: var(--body); margin-bottom: 14px; line-height: 1.6;
 }
+.slack-notice strong { color: var(--primary); }
 
 /* ── success box ── */
 .success-box {
-  background: #0a2a18; border: 1px solid #22c55e;
+  background: #f0faf6;
+  border: 1px solid #a3d9c4;
   border-radius: 12px; padding: 16px;
 }
 
 /* ── move list ── */
 .move-list {
-  background: #1e293b; border-radius: 12px;
-  border: 1.5px solid #334155; overflow: hidden;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: 12px; overflow: hidden;
 }
 .move-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; border-bottom: 1px solid #334155;
+  padding: 11px 14px; border-bottom: 1px solid var(--hairline-soft);
 }
 .move-item:last-child { border-bottom: none; }
 
 /* ── modal ── */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.65); z-index: 9999;
+  background: rgba(38,37,30,.5); z-index: 9999;
   align-items: center; justify-content: center; padding: 20px;
 }
 .modal-overlay.open { display: flex; }
 .modal-box {
-  background: #1e293b; border-radius: 14px;
-  padding: 24px 20px; max-width: 340px; width: 100%;
-  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: 12px; padding: 24px 20px;
+  max-width: 340px; width: 100%;
+  box-shadow: 0 4px 24px rgba(38,37,30,.08);
 }
-.modal-msg { color: #f1f5f9; font-size: 14px; line-height: 1.7; white-space: pre-line; }
+.modal-msg { color: var(--body); font-size: 14px; line-height: 1.7; white-space: pre-line; }
 
 /* ── helpers ── */
-.bc-text  { font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; color: #f1f5f9; }
-.item-name{ font-size: 14px; font-weight: 600; color: #e2e8f0; margin: 4px 0 2px; }
-.meta     { font-size: 12px; color: #64748b; line-height: 1.5; }
-.muted    { color: #64748b; }
-.err-text { font-size: 12px; color: #f87171; margin-top: 4px; }
+.bc-text  { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--ink); }
+.item-name{ font-size: 14px; font-weight: 600; color: var(--ink); margin: 4px 0 2px; }
+.meta     { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.muted    { color: var(--muted); }
+.err-text { font-size: 12px; color: var(--error); margin-top: 4px; }
 .row-sb   { display: flex; justify-content: space-between; align-items: flex-start; }
 .row-gap  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .flex-1   { flex: 1; }
+
 .remove-btn {
-  background: none; border: none; color: #475569;
+  background: none; border: none; color: var(--hairline-strong);
   font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0;
 }
-.remove-btn:hover { color: #ef4444; }
-.empty-msg { text-align: center; color: #475569; padding: 40px 0; font-size: 14px; }
+.remove-btn:hover { color: var(--error); }
+
+.empty-msg { text-align: center; color: var(--muted-soft); padding: 48px 0; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -230,7 +327,7 @@ body {
 <!-- STEP 1: 설정 -->
 <div id="step-setup">
   <div class="app-header">
-    <h1>🔄 장기재고 처리</h1>
+    <h1>장기재고 처리</h1>
     <div class="app-title-sub">바코드 스캔 → 가격수정 · 위치이동</div>
   </div>
   <div class="content" style="padding-top:24px">
@@ -244,33 +341,33 @@ body {
       <label class="form-label">장기재고 기준일</label>
       <div class="row-gap">
         <input type="number" id="threshold-input" class="form-input" value="60" min="1" max="365" style="width:90px">
-        <span style="color:#94a3b8">일 이상 경고</span>
+        <span style="color:var(--muted);font-size:14px">일 이상 경고</span>
       </div>
     </div>
-    <button class="btn btn-primary btn-block" id="start-btn">스캔 시작 →</button>
+    <button class="btn btn-primary btn-block" id="start-btn">스캔 시작</button>
   </div>
 </div>
 
 <!-- STEP 2: 스캔 -->
 <div id="step-scan" style="display:none">
   <div class="scan-header">
-    <div>
-      <div style="font-size:14px;font-weight:700" id="scan-store-label"></div>
-      <div style="font-size:12px;color:#94a3b8" id="scan-count">0개 스캔됨</div>
+    <div class="scan-header-left">
+      <h2 id="scan-store-label"></h2>
+      <p id="scan-count">0개 스캔됨</p>
     </div>
     <button class="btn btn-primary" id="process-btn" disabled>처리하기 →</button>
   </div>
   <div class="scan-input-wrap">
-    <input type="text" id="scan-input" class="scan-input" placeholder="바코드 스캔 또는 직접 입력" autocomplete="off" autocorrect="off" autocapitalize="off">
+    <input type="text" id="scan-input" class="scan-input" placeholder="바코드 스캔 또는 직접 입력"
+           autocomplete="off" autocorrect="off" autocapitalize="off">
   </div>
   <div id="scan-list" class="content"></div>
   <div class="bottom-pad"></div>
-  <!-- back은 app.js에서 동적 연결 -->
   <button id="scan-back-btn" style="display:none"></button>
 </div>
 
 <!-- STEP 3: 처리 선택 -->
-<div id="step-process" style="display:none" class="content" style="padding-bottom:80px"></div>
+<div id="step-process" style="display:none" class="content" style="padding-bottom:88px"></div>
 
 <!-- STEP 4A: 가격수정 -->
 <div id="step-price" style="display:none" class="content"></div>

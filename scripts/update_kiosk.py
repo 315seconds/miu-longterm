@@ -142,16 +142,22 @@ def run_kiosk(excel_path):
         )).click()
         log('엑셀 업로드 팝업 열기')
 
-        # ── 5. 동일 상품 덮어쓰기 선택 (한/영 대응) ──────────────────────────
+        # ── 5. 동일 상품 덮어쓰기 선택 (인덱스 1 = 두번째 옵션) ────────────────
         sel_el = W.until(EC.presence_of_element_located((By.TAG_NAME, 'select')))
         sel = Select(sel_el)
-        # 덮어쓰기 옵션을 한국어/영어 모두 시도
-        overwrite_texts = ['동일 상품 덮어쓰기', 'Overwrite', 'overwrite', 'Override', 'Update']
+        # 텍스트 매칭 먼저 시도, 실패하면 마지막 옵션 선택 (건너뛰기=0, 덮어쓰기=마지막)
+        overwrite_texts = ['동일 상품 덮어쓰기', 'Overwrite duplicate', 'Overwrite', 'Update existing']
+        selected = False
         for txt in overwrite_texts:
             try:
-                sel.select_by_visible_text(txt); break
+                sel.select_by_visible_text(txt); selected = True; break
             except Exception:
                 continue
+        if not selected:
+            # 마지막 옵션 선택 (건너뛰기가 기본값이므로 마지막이 덮어쓰기)
+            options = sel.options
+            sel.select_by_index(len(options) - 1)
+        log(f'덮어쓰기 옵션 선택: {sel.first_selected_option.text}')
 
         # ── 6. 파일 업로드 ────────────────────────────────────────────────────
         file_input = W.until(EC.presence_of_element_located(
@@ -164,7 +170,16 @@ def run_kiosk(excel_path):
         # ── 7. 저장 클릭 — JS click으로 오버레이 우회 ────────────────────────
         save_btn = W.until(EC.presence_of_element_located((By.ID, 'btnSave')))
         driver.execute_script('arguments[0].click();', save_btn)
-        time.sleep(3)  # 저장 처리 대기
+        time.sleep(2)
+        # 저장 후 알림창이 뜨면 닫기
+        try:
+            alert = driver.switch_to.alert
+            log(f'저장 알림: {alert.text}')
+            alert.accept()
+            time.sleep(1)
+        except Exception:
+            pass
+        time.sleep(2)
         log('저장 완료')
 
         # ── 8. 닫기 클릭 — JS click ───────────────────────────────────────────

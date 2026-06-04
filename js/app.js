@@ -164,13 +164,18 @@ async function addItemToScan(barcode) {
   renderScanList();
 
   try {
-    const [{ data: item, error }, { data: moves }] = await Promise.all([
+    const [{ data: item, error }, { data: moves }, { data: priceHistory }] = await Promise.all([
       sb.from('inventory_items')
         .select('price,brand,category,product_name,location,created_at,status')
         .eq('barcode', barcode).maybeSingle(),
       sb.from('session_items')
         .select('move_sessions!inner(session_date,to_location)')
         .eq('barcode', barcode),
+      sb.from('price_changes')
+        .select('old_price,new_price,changed_at')
+        .eq('barcode', barcode)
+        .order('changed_at', { ascending: false })
+        .limit(1),
     ]);
 
     if (error || !item) {
@@ -188,6 +193,7 @@ async function addItemToScan(barcode) {
 
     const daysInStore = daysDiff(arrivalStr);
     const totalDays   = daysDiff(item.created_at);
+    const lastChange = priceHistory?.[0] ?? null;
     S.items.set(barcode, {
       barcode,
       price: item.price || 0,
@@ -200,6 +206,11 @@ async function addItemToScan(barcode) {
       isLongterm: daysInStore >= S.threshold,
       locMismatch: !!(item.location && item.location !== S.store),
       status: item.status,
+      lastPriceChange: lastChange ? {
+        oldPrice: lastChange.old_price,
+        newPrice: lastChange.new_price,
+        daysAgo: daysDiff(lastChange.changed_at),
+      } : null,
     });
   } catch(e) {
     S.items.set(barcode, { barcode, error: e.message });
@@ -255,6 +266,7 @@ function renderScanList() {
         <span class="date-pill date-arrival">이 매장 ${fmtDate(item.arrivalDate)}</span>
       </div>
       ${item.locMismatch ? `<div class="loc-warn">⚠ 기록된 위치는 <strong>${escapeHtml(item.location)}</strong> — 이동 누락 확인 필요</div>` : ''}
+      ${item.lastPriceChange ? `<div class="price-history">📉 ${item.lastPriceChange.oldPrice.toLocaleString()}원 → ${item.lastPriceChange.newPrice.toLocaleString()}원으로 수정한 지 ${item.lastPriceChange.daysAgo}일 지났습니다</div>` : ''}
     </div>`;
   }).join('') || '<div class="empty-msg">바코드를 스캔하면 여기에 표시됩니다</div>';
 

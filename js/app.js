@@ -198,6 +198,7 @@ async function addItemToScan(barcode) {
       daysInStore,
       totalDays,
       isLongterm: daysInStore >= S.threshold,
+      locMismatch: !!(item.location && item.location !== S.store),
       status: item.status,
     });
   } catch(e) {
@@ -253,6 +254,7 @@ function renderScanList() {
         <span class="date-pill date-initial">최초입고 ${fmtDate(item.createdAt)}</span>
         <span class="date-pill date-arrival">이 매장 ${fmtDate(item.arrivalDate)}</span>
       </div>
+      ${item.locMismatch ? `<div class="loc-warn">⚠ 기록된 위치는 <strong>${escapeHtml(item.location)}</strong> — 이동 누락 확인 필요</div>` : ''}
     </div>`;
   }).join('') || '<div class="empty-msg">바코드를 스캔하면 여기에 표시됩니다</div>';
 

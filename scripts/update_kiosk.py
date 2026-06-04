@@ -132,7 +132,11 @@ def run_kiosk(excel_path):
         time.sleep(3)
         log('상품 등록(본사) 진입')
 
-        # ── 4. 엑셀 업로드 버튼 클릭 (한/영 대응) ────────────────────────────
+        # ── 4. 콘텐츠 iframe으로 전환 후 엑셀 업로드 버튼 클릭 ─────────────────
+        iframe = W.until(EC.presence_of_element_located(
+            (By.XPATH, '//iframe[contains(@src,"CompanyGoodsReg")]')
+        ))
+        driver.switch_to.frame(iframe)
         W.until(EC.element_to_be_clickable(
             (By.XPATH, '//button[contains(text(),"엑셀 업로드") or contains(text(),"Excel Upload") or contains(text(),"Excel upload")]')
         )).click()

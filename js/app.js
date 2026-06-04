@@ -350,7 +350,7 @@ function initPriceStep() {
     <button class="back-btn" id="price-back">← 선택으로</button>
     <span class="page-title">가격수정 (${S.priceOriginal.length}개)</span>
   </div>
-  <div class="slack-notice">⚠️ Slack에 <strong>「지금 공동판매 엑셀 가격 수정 중입니다」</strong> 메시지를 먼저 보내주세요.</div>
+  <div class="slack-notice">⚠️ Slack <strong>공동판매 사용중</strong> 채널에 <strong>현재 사용중</strong> 메시지를 먼저 남기세요.</div>
   <div class="mode-bar">
     <button class="mode-btn active" id="mode-ind">개별 수정</button>
     <button class="mode-btn" id="mode-bulk">일괄 % 수정</button>

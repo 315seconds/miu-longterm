@@ -98,31 +98,36 @@ def run_kiosk(excel_path):
         inputs[1].send_keys(KIOSK_USER)      # 아이디
         inputs[2].send_keys(KIOSK_PASS)      # 비밀번호
         inputs[2].send_keys(Keys.RETURN)     # Enter로 로그인 (버튼 구조 불문)
-        time.sleep(3)                        # 로그인 후 홈 화면 로드 대기
+        time.sleep(8)                        # 로그인 후 메뉴 JS 렌더링 대기
         log('로그인 완료')
 
-        # ── 2. 상품 관리 메뉴 클릭 ────────────────────────────────────────────
+        # ── 2+3. 상품 등록(본사) 직접 클릭 (즐겨찾기 or 메뉴, 한/영 대응) ────
         W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//*[contains(text(),"상품 관리") or contains(text(),"상품관리")]')
+            (By.XPATH, '//*['
+                'contains(text(),"Product registration(Common)") or '
+                'contains(text(),"상품 등록(본사)") or '
+                '(contains(text(),"상품 등록") and contains(text(),"본사"))'
+            ']')
         )).click()
-        time.sleep(1)
-
-        # ── 3. 상품 등록 (본사) 클릭 ──────────────────────────────────────────
-        W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//*[contains(text(),"상품 등록") and (contains(text(),"본사") or contains(text(),"(본사)"))]')
-        )).click()
-        time.sleep(2)
+        time.sleep(3)
         log('상품 등록(본사) 진입')
 
-        # ── 4. 엑셀 업로드 버튼 클릭 ─────────────────────────────────────────
+        # ── 4. 엑셀 업로드 버튼 클릭 (한/영 대응) ────────────────────────────
         W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//button[contains(text(),"엑셀 업로드")]')
+            (By.XPATH, '//button[contains(text(),"엑셀 업로드") or contains(text(),"Excel Upload") or contains(text(),"Excel upload")]')
         )).click()
         log('엑셀 업로드 팝업 열기')
 
-        # ── 5. 동일 상품 덮어쓰기 선택 ────────────────────────────────────────
+        # ── 5. 동일 상품 덮어쓰기 선택 (한/영 대응) ──────────────────────────
         sel_el = W.until(EC.presence_of_element_located((By.TAG_NAME, 'select')))
-        Select(sel_el).select_by_visible_text('동일 상품 덮어쓰기')
+        sel = Select(sel_el)
+        # 덮어쓰기 옵션을 한국어/영어 모두 시도
+        overwrite_texts = ['동일 상품 덮어쓰기', 'Overwrite', 'overwrite', 'Override', 'Update']
+        for txt in overwrite_texts:
+            try:
+                sel.select_by_visible_text(txt); break
+            except Exception:
+                continue
 
         # ── 6. 파일 업로드 ────────────────────────────────────────────────────
         file_input = W.until(EC.presence_of_element_located(
@@ -132,22 +137,22 @@ def run_kiosk(excel_path):
         time.sleep(2)  # 업로드 후 그리드 갱신 대기
         log('파일 업로드 완료')
 
-        # ── 7. 저장 클릭 ──────────────────────────────────────────────────────
+        # ── 7. 저장 클릭 (한/영 대응) ────────────────────────────────────────
         driver.find_element(
-            By.XPATH, '//button[contains(text(),"저장")]'
+            By.XPATH, '//button[contains(text(),"저장") or contains(text(),"Save") or contains(text(),"F4")]'
         ).click()
         time.sleep(3)  # 저장 처리 대기
         log('저장 완료')
 
-        # ── 8. 닫기 클릭 ──────────────────────────────────────────────────────
+        # ── 8. 닫기 클릭 (한/영 대응) ────────────────────────────────────────
         W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//button[contains(text(),"닫기")]')
+            (By.XPATH, '//button[contains(text(),"닫기") or contains(text(),"Close") or contains(text(),"close")]')
         )).click()
         time.sleep(1)
 
-        # ── 9. 자료수신 클릭 ──────────────────────────────────────────────────
+        # ── 9. 자료수신 클릭 (한/영 대응) ────────────────────────────────────
         W.until(EC.element_to_be_clickable(
-            (By.XPATH, '//button[contains(text(),"자료수신")]')
+            (By.XPATH, '//button[contains(text(),"자료수신") or contains(text(),"Data") or contains(text(),"Receive")]')
         )).click()
 
         # ── 10. 브라우저 confirm → OK ─────────────────────────────────────────

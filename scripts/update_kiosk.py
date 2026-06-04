@@ -165,15 +165,22 @@ def run_kiosk(excel_path):
         time.sleep(1)
         log('저장 완료')
 
-        # ── 8. 팝업 닫기 (modal-footer Close 버튼) ────────────────────────────
-        try:
-            close_btn = driver.find_element(By.CSS_SELECTOR, '.modal-footer button')
-            driver.execute_script('arguments[0].click();', close_btn)
-            time.sleep(1)
-        except Exception:
-            pass  # 알림 수락 후 모달이 이미 닫혔을 수 있음
+        # ── 8. 팝업 닫기 (modal-footer 내 text="Close" 버튼만 정확히 클릭) ──────
+        close_btn = driver.find_element(
+            By.XPATH,
+            '//div[contains(@class,"modal-footer")]//button[normalize-space()="Close"]'
+        )
+        driver.execute_script('arguments[0].click();', close_btn)
+        time.sleep(1)
 
-        # ── 9. 자료수신 클릭 (btnReqDownload, iframe 내) ─────────────────────
+        # ── 9. 전체 선택 후 자료수신 클릭 ────────────────────────────────────
+        # 그리드 행을 전체 선택해야 자료수신이 활성화됨
+        select_all = W.until(EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, '.dt-button.buttons-select-all')
+        ))
+        driver.execute_script('arguments[0].click();', select_all)
+        time.sleep(1)
+
         req_btn = W.until(EC.element_to_be_clickable((By.ID, 'btnReqDownload')))
         driver.execute_script('arguments[0].click();', req_btn)
 

@@ -17,4 +17,4 @@ source /home/ubuntu/work_automation/.env
 set +a
 
 mkdir -p "$(dirname "$LOG")"
-python3 "$SCRIPT_DIR/update_kiosk.py" >> "$LOG" 2>&1
+/home/ubuntu/work_automation/.venv/bin/python3 "$SCRIPT_DIR/update_kiosk.py" >> "$LOG" 2>&1

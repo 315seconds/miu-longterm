@@ -81,6 +81,7 @@ const S = {
   store: '',
   threshold: 60,
   threshold2: null,   // optional second tier (rotation warning)
+  operator: '',
   items: new Map(),    // barcode → itemData
   selected: new Set(),
   priceMode: 'individual',
@@ -113,11 +114,12 @@ async function initSetup() {
     const threshold = parseInt(document.getElementById('threshold-input').value) || 60;
     const t2raw = parseInt(document.getElementById('threshold2-input').value);
     const threshold2 = t2raw > 0 ? t2raw : null;
+    const operator = document.getElementById('operator-input').value.trim();
     if (!store) { appAlert('매장을 선택해주세요.'); return; }
     if (threshold2 !== null && threshold2 >= threshold) {
       appAlert('순환필요 기준일은 가격변경 기준일보다 작아야 합니다.'); return;
     }
-    S.store = store; S.threshold = threshold; S.threshold2 = threshold2;
+    S.store = store; S.threshold = threshold; S.threshold2 = threshold2; S.operator = operator;
     S.items = new Map(); S.selected = new Set();
     showStep('scan');
     initScanStep();
@@ -505,7 +507,7 @@ async function submitPriceChanges() {
   try {
     const now = new Date().toISOString();
     const { error } = await sb.from('price_changes').insert(
-      changes.map(c => ({ barcode:c.barcode, old_price:c.oldPrice, new_price:c.newPrice, changed_at:now, excel_updated:false }))
+      changes.map(c => ({ barcode:c.barcode, old_price:c.oldPrice, new_price:c.newPrice, changed_by: S.operator || null, changed_at:now, excel_updated:false }))
     );
     if (error) throw error;
 

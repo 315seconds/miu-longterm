@@ -245,7 +245,7 @@ function renderScanList() {
     `${valid.length}개 스캔됨${alertParts.length ? ' · ' + alertParts.join(' · ') : ''}`;
   document.getElementById('process-btn').disabled = valid.length === 0;
 
-  const sorted = [...all];
+  const sorted = [...all].reverse();
 
   const list = document.getElementById('scan-list');
   list.innerHTML = sorted.map(item => {

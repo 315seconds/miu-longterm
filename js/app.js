@@ -80,6 +80,7 @@ function normalizeBarcode(input) {
 const S = {
   store: '',
   threshold: 60,
+  threshold2: null,   // optional second tier (rotation warning)
   items: new Map(),    // barcode → itemData
   selected: new Set(),
   priceMode: 'individual',
@@ -110,8 +111,14 @@ async function initSetup() {
   document.getElementById('start-btn').onclick = () => {
     const store = sel.value;
     const threshold = parseInt(document.getElementById('threshold-input').value) || 60;
+    const t2raw = parseInt(document.getElementById('threshold2-input').value);
+    const threshold2 = t2raw > 0 ? t2raw : null;
     if (!store) { appAlert('매장을 선택해주세요.'); return; }
-    S.store = store; S.threshold = threshold; S.items = new Map(); S.selected = new Set();
+    if (threshold2 !== null && threshold2 >= threshold) {
+      appAlert('순환필요 기준일은 가격변경 기준일보다 작아야 합니다.'); return;
+    }
+    S.store = store; S.threshold = threshold; S.threshold2 = threshold2;
+    S.items = new Map(); S.selected = new Set();
     showStep('scan');
     initScanStep();
   };
@@ -120,7 +127,10 @@ async function initSetup() {
 // ── STEP 2: 스캔 ─────────────────────────────────────────────────────────────
 
 function initScanStep() {
-  document.getElementById('scan-store-label').textContent = `${S.store} · 기준 ${S.threshold}일`;
+  const labelSuffix = S.threshold2 !== null
+    ? `기준 🟠${S.threshold2}일 / 🔴${S.threshold}일`
+    : `기준 ${S.threshold}일`;
+  document.getElementById('scan-store-label').textContent = `${S.store} · ${labelSuffix}`;
   renderScanList();
 
   // 기존 리스너 제거 후 새로 연결
@@ -203,7 +213,9 @@ async function addItemToScan(barcode) {
       arrivalDate: arrivalStr,
       daysInStore,
       totalDays,
-      isLongterm: daysInStore >= S.threshold,
+      tier: daysInStore >= S.threshold ? 2
+          : S.threshold2 !== null && daysInStore >= S.threshold2 ? 1
+          : 0,
       locMismatch: !!(item.location && item.location !== S.store),
       status: item.status,
       lastPriceChange: lastChange ? {
@@ -221,17 +233,17 @@ async function addItemToScan(barcode) {
 function renderScanList() {
   const all = [...S.items.values()];
   const valid = all.filter(i => !i.loading && !i.notFound && !i.error);
-  const ltCount = valid.filter(i => i.isLongterm).length;
+  const t2Count = valid.filter(i => i.tier === 2).length;
+  const t1Count = valid.filter(i => i.tier === 1).length;
+  const alertParts = [];
+  if (t2Count) alertParts.push(`🔴 가격변경 ${t2Count}개`);
+  if (t1Count) alertParts.push(`🟠 순환필요 ${t1Count}개`);
 
   document.getElementById('scan-count').textContent =
-    `${valid.length}개 스캔됨${ltCount ? ` · 🔴 장기재고 ${ltCount}개` : ''}`;
+    `${valid.length}개 스캔됨${alertParts.length ? ' · ' + alertParts.join(' · ') : ''}`;
   document.getElementById('process-btn').disabled = valid.length === 0;
 
-  const sorted = [...all].sort((a,b) => {
-    if (a.isLongterm && !b.isLongterm) return -1;
-    if (!a.isLongterm && b.isLongterm) return 1;
-    return (b.daysInStore||0) - (a.daysInStore||0);
-  });
+  const sorted = [...all];
 
   const list = document.getElementById('scan-list');
   list.innerHTML = sorted.map(item => {
@@ -242,7 +254,9 @@ function renderScanList() {
 
     const soldTag = item.status==='sold' ? '<span class="sold-tag">판매됨</span>' : '';
 
-    return `<div class="scan-card${item.isLongterm?' card-lt':''}">
+    const tierCls = item.tier === 2 ? ' card-lt2' : item.tier === 1 ? ' card-lt1' : '';
+    const daysCls  = item.tier === 2 ? ' days-lt2' : item.tier === 1 ? ' days-lt1' : '';
+    return `<div class="scan-card${tierCls}">
       <div class="card-top">
         <div class="card-main">
           <div class="item-name">${escapeHtml(item.displayName)}</div>
@@ -257,7 +271,7 @@ function renderScanList() {
       </div>
       <div class="card-price">${item.price.toLocaleString()}<span class="unit">원</span></div>
       <div class="days-text">
-        <span class="days-store${item.isLongterm?' days-lt':''}">여기온지 ${item.daysInStore}일 됐어요</span>
+        <span class="days-store${daysCls}">여기온지 ${item.daysInStore}일 됐어요</span>
         <span class="days-sep">·</span>
         <span class="days-total">안팔린지 ${item.totalDays}일째 😢</span>
       </div>
@@ -281,23 +295,30 @@ function renderScanList() {
 
 function initProcessStep() {
   const all = [...S.items.values()].filter(i => !i.loading && !i.notFound && !i.error);
-  const lt  = all.filter(i => i.isLongterm).sort((a,b) => b.daysInStore - a.daysInStore);
-  const ok  = all.filter(i => !i.isLongterm).sort((a,b) => b.daysInStore - a.daysInStore);
+  const t2  = all.filter(i => i.tier === 2).sort((a,b) => b.daysInStore - a.daysInStore);
+  const t1  = all.filter(i => i.tier === 1).sort((a,b) => b.daysInStore - a.daysInStore);
+  const ok  = all.filter(i => i.tier === 0).sort((a,b) => b.daysInStore - a.daysInStore);
 
-  // 장기재고 자동 선택
-  S.selected = new Set(lt.map(i => i.barcode));
+  // 장기재고(tier2) 자동 선택
+  S.selected = new Set(t2.map(i => i.barcode));
 
   let html = `<div class="page-header">
     <button class="back-btn" id="proc-back">← 스캔으로</button>
     <span class="page-title">처리할 물건 선택</span>
   </div>`;
 
-  if (lt.length) {
-    html += `<div class="section-hd red-hd">🔴 장기재고 ${lt.length}개 (${S.threshold}일 초과)</div>`;
-    html += lt.map(i => processCard(i)).join('');
+  if (t2.length) {
+    html += `<div class="section-hd red-hd">🔴 가격변경 ${t2.length}개 (${S.threshold}일 초과)</div>`;
+    html += t2.map(i => processCard(i)).join('');
+  }
+  if (t1.length) {
+    const gap = t2.length ? 'margin-top:12px' : '';
+    html += `<div class="section-hd" style="color:var(--warn);${gap}">🟠 순환필요 ${t1.length}개 (${S.threshold2}일 초과)</div>`;
+    html += t1.map(i => processCard(i)).join('');
   }
   if (ok.length) {
-    html += `<div class="section-hd green-hd" style="margin-top:${lt.length?'12px':'0'}">🟢 정상 ${ok.length}개</div>`;
+    const gap = (t2.length || t1.length) ? 'margin-top:12px' : '';
+    html += `<div class="section-hd green-hd" style="${gap}">🟢 정상 ${ok.length}개</div>`;
     html += ok.map(i => processCard(i)).join('');
   }
 
@@ -324,7 +345,9 @@ function initProcessStep() {
 
 function processCard(item) {
   const chk = S.selected.has(item.barcode) ? 'checked' : '';
-  return `<label class="proc-card${item.isLongterm?' card-lt':''}">
+  const tierCls = item.tier === 2 ? ' card-lt2' : item.tier === 1 ? ' card-lt1' : '';
+  const daysCls  = item.tier === 2 ? ' days-lt2' : item.tier === 1 ? ' days-lt1' : '';
+  return `<label class="proc-card${tierCls}">
     <input type="checkbox" class="proc-cb" data-bc="${escapeHtml(item.barcode)}" ${chk}>
     <div class="proc-info">
       <div class="item-name">${escapeHtml(item.displayName)}</div>
@@ -333,7 +356,7 @@ function processCard(item) {
       </div>
       <div class="card-price" style="margin-top:8px">${item.price.toLocaleString()}<span class="unit">원</span></div>
       <div class="days-text">
-        <span class="days-store${item.isLongterm?' days-lt':''}">여기온지 ${item.daysInStore}일 됐어요</span>
+        <span class="days-store${daysCls}">여기온지 ${item.daysInStore}일 됐어요</span>
         <span class="days-sep">·</span>
         <span class="days-total">안팔린지 ${item.totalDays}일째 😢</span>
       </div>
@@ -589,6 +612,7 @@ function saveState() {
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
     store: S.store,
     threshold: S.threshold,
+    threshold2: S.threshold2,
     items,
   }));
 }
@@ -601,6 +625,7 @@ function loadSavedState() {
     if (!data.store) return false;
     S.store = data.store;
     S.threshold = data.threshold || 60;
+    S.threshold2 = data.threshold2 ?? null;
     S.items = new Map(data.items || []);
     return true;
   } catch(e) {
